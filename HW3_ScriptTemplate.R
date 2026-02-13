@@ -2,8 +2,8 @@
 # Homework 3 - Script Template (Pseudocode Draft)
 
 # NOTE:
-# This file is intentionally filled with comments + pseudocode so you can review logic.
-# Replace pseudocode blocks with executable code once approved.
+# Section 3.1 below is now executable and produces draft answers for Q1-Q4.
+# Remaining sections are still pseudocode and can be converted next.
 
 # ---------------------------
 # Section 3.1 - Preliminaries
@@ -11,38 +11,113 @@
 
 # 1) Set working directory and load packages
 # setwd("/path/to/HW3")  # Keep commented before submission per instructions.
-# install.packages(c("dplyr", "ggplot2", "ggeffects", "stargazer", "ggrepel"))
-# library(dplyr)
-# library(ggplot2)
-# library(ggeffects)
-# library(stargazer)
-# library(ggrepel)
+# install.packages(c("dplyr", "ggplot2", "ggeffects", "stargazer", "ggrepel", "tidyr"))
+
+# Load only what is needed for Section 3.1
+suppressPackageStartupMessages({
+  library(dplyr)
+})
 
 # 2) Load the dataset (tab-delimited with required encoding)
-# justice_data <- read.table(
-#   "justice_results.tab",
-#   header = TRUE,
-#   sep = "\t",
-#   encoding = "ISO-8859-1"
-# )
+justice_data <- read.table(
+  "justice_results.tab",
+  header = TRUE,
+  sep = "\t",
+  encoding = "ISO-8859-1"
+)
 
 # 3) Explore dataset structure (for Q1/Q2 context)
-# str(justice_data)            # rows, columns, and data types
-# names(justice_data)          # variable names
-# dim(justice_data)            # observation and variable counts
+str(justice_data)            # rows, columns, and data types
+names(justice_data)          # variable names
+dim(justice_data)            # observation and variable counts
 
 # 4) Summarize variables
-# summary(justice_data)        # global summary statistics
+summary(justice_data)        # global summary statistics
 
 # 5) Count unique Supreme Court cases using docket
-# n_unique_dockets <- length(unique(justice_data$docket))
-# n_unique_dockets
+n_unique_dockets <- length(unique(justice_data$docket))
+n_unique_caseid <- length(unique(justice_data$caseId))
+n_unique_justices <- length(unique(justice_data$justiceName))
+n_unique_dockets
+n_unique_caseid
+n_unique_justices
 
 # 6) Check missing values by column and overall
-# missing_by_var <- colSums(is.na(justice_data))
-# total_missing <- sum(is.na(justice_data))
-# missing_by_var[missing_by_var > 0]  # print only variables with missing values
-# total_missing
+missing_by_var <- colSums(is.na(justice_data))
+total_missing <- sum(is.na(justice_data))
+missing_table <- data.frame(
+  variable = names(missing_by_var),
+  missing_n = as.integer(missing_by_var),
+  missing_pct = round((as.integer(missing_by_var) / nrow(justice_data)) * 100, 2)
+)
+missing_table_nonzero <- missing_table %>%
+  dplyr::filter(missing_n > 0) %>%
+  dplyr::arrange(desc(missing_n), variable)
+
+missing_table_nonzero  # print only variables with missing values
+total_missing
+
+# Save missing-data diagnostic table for reference in Q4
+write.table(
+  missing_table_nonzero,
+  file = "HW3_MissingValues_3_1.txt",
+  sep = "\t",
+  row.names = FALSE,
+  quote = FALSE
+)
+
+# -----------------------------------------
+# Draft answers for Section 3.1 (Q1 to Q4)
+# -----------------------------------------
+
+# Unit-of-observation check: each row is uniquely identified by docketId + justiceName
+n_unique_docket_justice <- nrow(unique(justice_data[, c("docketId", "justiceName")]))
+n_duplicate_docket_justice <- nrow(justice_data) - n_unique_docket_justice
+
+# Q1 must be 3 sentences
+q1_answer <- paste0(
+  "This dataset contains ", nrow(justice_data), " justice-level observations across ",
+  n_unique_dockets, " unique dockets (", n_unique_caseid, " unique case IDs) and ",
+  n_unique_justices, " justices. ",
+  "Each row includes a justice's vote outcome (petitioner_vote), oral-argument speech measures such as pitch_diff and positive-word counts for both sides, and case-level context such as term and amicus support variables. ",
+  "The structure allows you to examine whether emotional tone during oral arguments is associated with how justices vote in Supreme Court cases."
+)
+
+q2_answer <- paste0(
+  "The unit of observation is a justice-docket vote observation: one justice in one docket-level case record. ",
+  "In this file, docketId + justiceName combinations are unique (duplicates = ", n_duplicate_docket_justice, "), which supports that row definition."
+)
+
+q3_answer <- paste(
+  "A vote in favor of the petitioner means petitioner_vote = 1, i.e., the justice supported the petitioner in that case.",
+  "Predicting this outcome matters because Supreme Court votes determine case outcomes and legal precedent, which can change policy implementation, government authority, and litigants' rights.",
+  "In this project, the outcome is used to evaluate whether emotional arousal cues in oral arguments help explain voting behavior."
+)
+
+q4_answer <- paste0(
+  "There are ", total_missing, " missing values in total. ",
+  nrow(missing_table_nonzero), " variables contain missing data, and each of those variables has 232 missing entries (about 4.45% of observations). ",
+  "This matters because complete-case modeling can reduce sample size and may bias estimates if the missingness is systematic rather than random."
+)
+
+# Write draft text answers to a plain-text file for your PDF write-up
+answers_q1_q4 <- c(
+  "Section 3.1 Draft Answers (Q1-Q4)",
+  "",
+  paste0("Q1: ", q1_answer),
+  "",
+  paste0("Q2: ", q2_answer),
+  "",
+  paste0("Q3: ", q3_answer),
+  "",
+  paste0("Q4: ", q4_answer),
+  "",
+  "Variables with missing values (Q4 support):",
+  paste0(missing_table_nonzero$variable, ": ", missing_table_nonzero$missing_n,
+         " (", missing_table_nonzero$missing_pct, "%)")
+)
+
+writeLines(answers_q1_q4, con = "HW3_Section3_1_Q1_Q4_DraftAnswers.txt")
 
 
 # ---------------------------

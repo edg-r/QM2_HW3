@@ -1,0 +1,35 @@
+Section 3.1 Draft Answers (Q1-Q4)
+
+Q1: This dataset contains 5209 justice-level observations across 1002 unique dockets (1000 unique case IDs) and 18 justices. Each row includes a justice's vote outcome (petitioner_vote), oral-argument speech measures such as pitch_diff and positive-word counts for both sides, and case-level context such as term and amicus support variables. The structure allows you to examine whether emotional tone during oral arguments is associated with how justices vote in Supreme Court cases.
+
+Q2: The unit of observation is a justice-docket vote observation: one justice in one docket-level case record. In this file, docketId + justiceName combinations are unique (duplicates = 0), which supports that row definition.
+
+Q3: A vote in favor of the petitioner means petitioner_vote = 1, i.e., the justice supported the petitioner in that case. Predicting this outcome matters because Supreme Court votes determine case outcomes and legal precedent, which can change policy implementation, government authority, and litigants' rights. In this project, the outcome is used to evaluate whether emotional arousal cues in oral arguments help explain voting behavior.
+
+Q4: There are 5568 missing values in total. 24 variables contain missing data, and each of those variables has 232 missing entries (about 4.45% of observations). This matters because complete-case modeling can reduce sample size and may bias estimates if the missingness is systematic rather than random.
+
+Variables with missing values (Q4 support):
+conservative_lc: 232 (4.45%)
+lagged_ideology: 232 (4.45%)
+petNumStat: 232 (4.45%)
+petac: 232 (4.45%)
+petitioner_count: 232 (4.45%)
+petitioner_dal_neg: 232 (4.45%)
+petitioner_dal_pos: 232 (4.45%)
+petitioner_harvard_neg: 232 (4.45%)
+petitioner_harvard_pos: 232 (4.45%)
+petitioner_liwc_neg: 232 (4.45%)
+petitioner_liwc_pos: 232 (4.45%)
+petitioner_wc: 232 (4.45%)
+respNumStat: 232 (4.45%)
+respac: 232 (4.45%)
+respondent_count: 232 (4.45%)
+respondent_dal_neg: 232 (4.45%)
+respondent_dal_pos: 232 (4.45%)
+respondent_harvard_neg: 232 (4.45%)
+respondent_harvard_pos: 232 (4.45%)
+respondent_liwc_neg: 232 (4.45%)
+respondent_liwc_pos: 232 (4.45%)
+respondent_wc: 232 (4.45%)
+sgpetac: 232 (4.45%)
+sgrespac: 232 (4.45%)
