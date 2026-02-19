@@ -1,0 +1,9 @@
+Outlier Summary (Section 3.4)
+Model observations: 4977
+k (predictors): 6
+Threshold |studentized residual| > 2
+Threshold leverage > 0.002813
+Threshold Cook's D > 0.000804
+Threshold |DFFITS| > 0.069442
+Flagged outliers (any threshold): 244
+Flagged egregious outliers (all thresholds): 0
