@@ -6,7 +6,7 @@
 # ---------------------------
 
 # Keep commented per submission rules.
-# setwd("/path/to/HW3")
+setwd('/Users/edgar/Documents/01 Projects/GPCO 454 - QM2 - Ravanilla/HomeWork/HW3')
 
 # Suppress startup messages while loading packages.
 suppressPackageStartupMessages({
@@ -302,6 +302,10 @@ p1 <- ggplot(fig1_summary, aes(x = sgpetac_label, y = prop_petitioner_vote, fill
   # Execute: theme_minimal()
   theme_minimal()
 
+# Render Figure 1 in the Plots pane when running the script.
+# Execute: print(p1)
+print(p1)
+
 # Export Figure 1 with required dimensions/DPI.
 # Save figure to disk with specified dimensions.
 ggsave("HW3 Fig1.png", plot = p1, width = 6, height = 4, dpi = 300)
@@ -363,6 +367,11 @@ p2 <- ggplot(fig2_summary, aes(x = high_pitch_diff, y = prop_petitioner_vote, fi
   geom_col() +
   # Execute: facet_wrap(~ court_period) +
   facet_wrap(~ court_period) +
+  # Shorten x tick labels so they do not overlap across facets.
+  scale_x_discrete(labels = c(
+    "Below Avg. Pitch Differential" = "Below Avg.",
+    "Above Avg. Pitch Differential" = "Above Avg."
+  )) +
   # Execute: scale_fill_manual(values = c(
   scale_fill_manual(values = c(
     # Execute: "Below Avg. Pitch Differential" = "blue",
@@ -384,7 +393,12 @@ p2 <- ggplot(fig2_summary, aes(x = high_pitch_diff, y = prop_petitioner_vote, fi
   # Close function call arguments.
   ) +
   # Execute: theme_minimal()
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 15, hjust = 1))
+
+# Render Figure 2 in the Plots pane when running the script.
+# Execute: print(p2)
+print(p2)
 
 # Export Figure 2 with required dimensions/DPI.
 # Save figure to disk with specified dimensions.
@@ -466,6 +480,10 @@ p3 <- ggplot(grid3, aes(x = pitch_diff, y = pred, color = court_period)) +
   # Execute: theme_minimal()
   theme_minimal()
 
+# Render Figure 3 in the Plots pane when running the script.
+# Execute: print(p3)
+print(p3)
+
 # Export Figure 3.
 # Save figure to disk with specified dimensions.
 ggsave("HW3 Fig3.png", plot = p3, width = 6, height = 4, dpi = 300)
@@ -532,6 +550,10 @@ p4 <- ggplot(grid4, aes(x = pitch_diff, y = pred, color = court_period)) +
   # Execute: theme_minimal()
   theme_minimal()
 
+# Render Figure 4 in the Plots pane when running the script.
+# Execute: print(p4)
+print(p4)
+
 # Export Figure 4.
 # Save figure to disk with specified dimensions.
 ggsave("HW3 Fig4.png", plot = p4, width = 6, height = 4, dpi = 300)
@@ -580,6 +602,10 @@ p5 <- ggplot(grid5, aes(x = pitch_diff, y = pred, color = pr_petitioner_pos)) +
   ) +
   # Execute: theme_minimal()
   theme_minimal()
+
+# Render Figure 5 in the Plots pane when running the script.
+# Execute: print(p5)
+print(p5)
 
 # Export Figure 5.
 # Save figure to disk with specified dimensions.
@@ -695,6 +721,10 @@ p6 <- ggplot(outlier_df, aes(x = abs_dffits, y = leverage, color = is_outlier)) 
   ) +
   # Execute: theme_minimal()
   theme_minimal()
+
+# Render Figure 6 in the Plots pane when running the script.
+# Execute: print(p6)
+print(p6)
 
 # Export Figure 6.
 # Save figure to disk with specified dimensions.
