@@ -24,52 +24,52 @@ Reference documents used for interpretation (not required by the script runtime)
 ## 3. High-Level Execution Flow (Pseudocode)
 
 ```text
-START
+START  // Begin end-to-end HW3 workflow
 
-CHECK working directory and required data file exist
-LOAD libraries: dplyr, tidyr, ggplot2, stargazer
-DEFINE helper functions:
-  build_court_period(term)
-  first_mode(x)
+CHECK working directory and required data file exist  // Fail early if path/file setup is wrong
+LOAD libraries: dplyr, tidyr, ggplot2, stargazer  // Attach packages used for wrangling, plots, and tables
+DEFINE helper functions:  // Create reusable utilities before analysis steps
+  build_court_period(term)  // Map term year to Burger/Rehnquist/Roberts period
+  first_mode(x)  // Return most frequent category for reference-value plotting
 
-READ justice_results.tab into justice_data (tab + ISO-8859-1)
-PRINT structure and summary
+READ justice_results.tab into justice_data (tab + ISO-8859-1)  // Ingest assignment dataset with required parsing settings
+PRINT structure and summary  // Inspect variable types and baseline distributions
 
-COMPUTE missingness table and total missing count
-WRITE HW3_MissingValues_3_1.txt
+COMPUTE missingness table and total missing count  // Quantify NA patterns for diagnostics and write-up
+WRITE HW3_MissingValues_3_1.txt  // Persist nonzero-missing summary for submission support
 
-BUILD draft text answers for Q1-Q4 using computed values
-WRITE HW3_Section3_1_Q1_Q4_DraftAnswers.txt
+BUILD draft text answers for Q1-Q4 using computed values  // Auto-fill preliminary written responses from live data outputs
+WRITE HW3_Section3_1_Q1_Q4_DraftAnswers.txt  // Save draft responses for PDF integration
 
-SECTION 3.2:
-  summarize key variables
-  create high_pitch_diff and court_period
-  verify factor counts with table()
-  build chief-justice plot dataset for sgpetac
-  compute proportions and save HW3 Fig1.png
-  build pitch-differential plot dataset
-  compute proportions and save HW3 Fig2.png
+SECTION 3.2:  // Descriptive statistics and required visualizations
+  summarize key variables  // Report core distributional stats for requested variables
+  create high_pitch_diff and court_period  // Engineer binary/period features used in plots and models
+  verify factor counts with table()  // Confirm category balance and coding correctness
+  build chief-justice plot dataset for sgpetac  // Subset to required justices and fields for Figure 1
+  compute proportions and save HW3 Fig1.png  // Create amicus-vote proportion chart and export image
+  build pitch-differential plot dataset  // Prepare Figure 2 analysis subset
+  compute proportions and save HW3 Fig2.png  // Create pitch-group vote chart by court period and export image
 
-SECTION 3.3:
-  create pr_petitioner_pos with division-by-zero protection
-  fit m3_1, m3_2, m3_3 and write HW3 Table1.txt
-  fit period interaction models and save HW3 Fig3.png
-  fit progressive models m_prog1..m_prog6 and write HW3 Table2.txt
-  save interaction plots HW3 Fig4.png and HW3 Fig5.png
+SECTION 3.3:  // Regression analyses and interaction effects
+  create pr_petitioner_pos with division-by-zero protection  // Compute relative positivity rate safely
+  fit m3_1, m3_2, m3_3 and write HW3 Table1.txt  // Estimate baseline + fixed-effects models and export table
+  fit period interaction models and save HW3 Fig3.png  // Model pitch-by-period interaction and visualize predicted values
+  fit progressive models m_prog1..m_prog6 and write HW3 Table2.txt  // Run nested model sequence and export comparison table
+  save interaction plots HW3 Fig4.png and HW3 Fig5.png  // Export two required interaction-effect visuals
 
-SECTION 3.4:
-  run outlier diagnostics on final_model (m_prog6):
-    studentized residual, leverage, Cook's D, DFFITS
-  compute assignment thresholds
-  flag outliers and egregious outliers
-  save diagnostic scatter plot HW3 Fig6.png
-  fit full vs outlier-excluded models
-  write HW3 Table3.txt and HW3_OutlierSummary.txt
+SECTION 3.4:  // Outlier diagnostics and robustness check
+  run outlier diagnostics on final_model (m_prog6):  // Generate influence metrics from final specification
+    studentized residual, leverage, Cook's D, DFFITS  // Compute four assignment-required diagnostic measures
+  compute assignment thresholds  // Calculate cutoff rules using n and k formulas
+  flag outliers and egregious outliers  // Label rows exceeding any/all diagnostic thresholds
+  save diagnostic scatter plot HW3 Fig6.png  // Visualize leverage vs |DFFITS| with threshold lines
+  fit full vs outlier-excluded models  // Re-estimate final model before and after dropping flagged rows
+  write HW3 Table3.txt and HW3_OutlierSummary.txt  // Export robustness comparison + diagnostics summary
 
-GENERATE Q5-Q17 draft answers from computed stats/models/diagnostics
-WRITE HW3_DraftAnswers_Q5_Q17.txt
+GENERATE Q5-Q17 draft answers from computed stats/models/diagnostics  // Convert numeric outputs into draft narrative responses
+WRITE HW3_DraftAnswers_Q5_Q17.txt  // Save draft answers for final PDF editing
 
-END
+END  // Workflow complete
 ```
 
 ## 4. Variable Construction Strategy Used

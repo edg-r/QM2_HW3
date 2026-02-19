@@ -9,12 +9,13 @@
 # setwd("/path/to/HW3")
 
 suppressPackageStartupMessages({
-  library(dplyr)
-  library(tidyr)
-  library(ggplot2)
-  library(stargazer)
+  library(dplyr)     # Data manipulation verbs and piping pipelines
+  library(tidyr)     # Missing-data helpers and reshaping utilities
+  library(ggplot2)   # Plot creation and figure export support
+  library(stargazer) # Regression table formatting for assignment outputs
 })
 
+# Map each term year into assignment-defined court periods.
 build_court_period <- function(term_vec) {
   dplyr::case_when(
     term_vec >= 1969 & term_vec <= 1985 ~ "Burger",
@@ -24,6 +25,7 @@ build_court_period <- function(term_vec) {
   )
 }
 
+# Return the modal category; used to hold one factor constant in interaction plots.
 first_mode <- function(x) {
   tab <- sort(table(x), decreasing = TRUE)
   names(tab)[1]
@@ -40,13 +42,16 @@ justice_data <- read.table(
   encoding = "ISO-8859-1"
 )
 
+# Print structure and overall summaries for quick diagnostics/Q1-Q2 support.
 str(justice_data)
 summary(justice_data)
 
+# Count unique entities referenced in the write-up.
 n_unique_dockets <- dplyr::n_distinct(justice_data$docket)
 n_unique_caseid <- dplyr::n_distinct(justice_data$caseId)
 n_unique_justices <- dplyr::n_distinct(justice_data$justiceName)
 
+# Build variable-level and total missingness diagnostics.
 missing_by_var <- colSums(is.na(justice_data))
 total_missing <- sum(is.na(justice_data))
 missing_table <- data.frame(
@@ -58,6 +63,7 @@ missing_table_nonzero <- missing_table %>%
   dplyr::filter(missing_n > 0) %>%
   dplyr::arrange(desc(missing_n), variable)
 
+# Export missing-value summary for submission support.
 write.table(
   missing_table_nonzero,
   file = "HW3_MissingValues_3_1.txt",
@@ -66,9 +72,11 @@ write.table(
   quote = FALSE
 )
 
+# Check whether docket-justice rows are unique (unit-of-observation validation).
 n_unique_docket_justice <- nrow(unique(justice_data[, c("docketId", "justiceName")]))
 n_duplicate_docket_justice <- nrow(justice_data) - n_unique_docket_justice
 
+# Draft Q1 narrative using computed descriptive values.
 q1_answer <- paste0(
   "This dataset contains ", nrow(justice_data), " justice-level observations across ",
   n_unique_dockets, " unique dockets (", n_unique_caseid, " unique case IDs) and ",
@@ -77,24 +85,28 @@ q1_answer <- paste0(
   "This structure supports testing whether oral-argument emotional cues are associated with Supreme Court voting behavior."
 )
 
+# Draft Q2 narrative focused on observation unit and duplicate check.
 q2_answer <- paste0(
   "The unit of observation is one justice-docket vote record. ",
   "docketId + justiceName combinations are unique in this dataset (duplicates = ",
   n_duplicate_docket_justice, "), which is consistent with that unit."
 )
 
+# Draft Q3 narrative for dependent-variable meaning and relevance.
 q3_answer <- paste(
   "A vote in favor of the petitioner is coded as petitioner_vote = 1.",
   "This is substantively important because these votes determine case outcomes and legal precedent.",
   "The assignment uses this outcome to evaluate whether emotional dynamics in oral argument relate to judicial decisions."
 )
 
+# Draft Q4 narrative using computed missingness.
 q4_answer <- paste0(
   "There are ", total_missing, " missing values in total. ",
   nrow(missing_table_nonzero), " variables have missing data, and each has 232 missing observations (4.45% of rows). ",
   "Missingness matters because complete-case estimation can reduce sample size and potentially bias results if missingness is non-random."
 )
 
+# Combine all Section 3.1 draft responses into one text vector.
 answers_q1_q4 <- c(
   "Section 3.1 Draft Answers (Q1-Q4)",
   "",
@@ -114,32 +126,38 @@ answers_q1_q4 <- c(
   )
 )
 
+# Write Section 3.1 draft answers to a standalone file.
 writeLines(answers_q1_q4, con = "HW3_Section3_1_Q1_Q4_DraftAnswers.txt")
 
 # ---------------------------
 # 3) Section 3.2 Descriptive Stats and Plots
 # ---------------------------
 
+# Compute required descriptive statistics for key variables (Q5 setup).
 summary_3_2 <- summary(justice_data[, c("petitioner_vote", "pitch_diff", "petitioner_harvard_pos")])
 print(summary_3_2)
 
+# Build analysis features used in descriptive plots.
 pitch_mean <- mean(justice_data$pitch_diff, na.rm = TRUE)
 justice_data <- justice_data %>%
   dplyr::mutate(
-    high_pitch_diff = ifelse(pitch_diff > pitch_mean, 1, 0),
-    high_pitch_diff = factor(high_pitch_diff, levels = c(0, 1)),
-    court_period = build_court_period(term),
-    court_period = factor(court_period, levels = c("Burger", "Rehnquist", "Roberts"))
+    high_pitch_diff = ifelse(pitch_diff > pitch_mean, 1, 0),                          # Above-mean pitch indicator
+    high_pitch_diff = factor(high_pitch_diff, levels = c(0, 1)),                      # Ordered binary factor
+    court_period = build_court_period(term),                                           # Term-to-court-period mapping
+    court_period = factor(court_period, levels = c("Burger", "Rehnquist", "Roberts")) # Stable plotting/model order
   )
 
+# Quick frequency checks for engineered factors.
 table(justice_data$high_pitch_diff, useNA = "ifany")
 table(justice_data$court_period, useNA = "ifany")
 
+# Figure 1 source data: restrict to required chief justices and needed columns.
 chief_data <- justice_data %>%
   dplyr::filter(justiceName %in% c("WEBurger", "WHRehnquist", "JGRoberts")) %>%
   dplyr::select(justiceName, petitioner_vote, sgpetac) %>%
   tidyr::drop_na()
 
+# Compute petitioner-vote share by justice and SG amicus status.
 fig1_summary <- chief_data %>%
   dplyr::group_by(justiceName, sgpetac) %>%
   dplyr::summarise(prop_petitioner_vote = mean(petitioner_vote), .groups = "drop") %>%
@@ -148,6 +166,7 @@ fig1_summary <- chief_data %>%
     sgpetac_label = factor(sgpetac_label, levels = c("No Amicus", "Amicus"))
   )
 
+# Build Figure 1 bar chart with assignment colors and y-range.
 p1 <- ggplot(fig1_summary, aes(x = sgpetac_label, y = prop_petitioner_vote, fill = sgpetac_label)) +
   geom_col() +
   facet_wrap(~ justiceName) +
@@ -160,13 +179,16 @@ p1 <- ggplot(fig1_summary, aes(x = sgpetac_label, y = prop_petitioner_vote, fill
   ) +
   theme_minimal()
 
+# Export Figure 1 with required dimensions/DPI.
 ggsave("HW3 Fig1.png", plot = p1, width = 6, height = 4, dpi = 300)
 
+# Figure 2 source data: same justices plus pitch and term fields.
 fig2_data <- justice_data %>%
   dplyr::filter(justiceName %in% c("WEBurger", "WHRehnquist", "JGRoberts")) %>%
   dplyr::select(justiceName, petitioner_vote, pitch_diff, term) %>%
   tidyr::drop_na()
 
+# Recompute pitch grouping and period labels specifically for Figure 2.
 fig2_mean <- mean(fig2_data$pitch_diff, na.rm = TRUE)
 fig2_data <- fig2_data %>%
   dplyr::mutate(
@@ -183,10 +205,12 @@ fig2_data <- fig2_data %>%
     court_period = factor(court_period, levels = c("Burger", "Rehnquist", "Roberts"))
   )
 
+# Compute petitioner-vote share by court period and pitch group.
 fig2_summary <- fig2_data %>%
   dplyr::group_by(court_period, high_pitch_diff) %>%
   dplyr::summarise(prop_petitioner_vote = mean(petitioner_vote), .groups = "drop")
 
+# Build Figure 2 bar chart with assignment labels/colors.
 p2 <- ggplot(fig2_summary, aes(x = high_pitch_diff, y = prop_petitioner_vote, fill = high_pitch_diff)) +
   geom_col() +
   facet_wrap(~ court_period) +
@@ -202,12 +226,14 @@ p2 <- ggplot(fig2_summary, aes(x = high_pitch_diff, y = prop_petitioner_vote, fi
   ) +
   theme_minimal()
 
+# Export Figure 2 with required dimensions/DPI.
 ggsave("HW3 Fig2.png", plot = p2, width = 6, height = 4, dpi = 300)
 
 # ---------------------------
 # 4) Section 3.3 Regression Analyses
 # ---------------------------
 
+# Construct regression-ready dataset and core derived predictor.
 analysis_data <- justice_data %>%
   dplyr::mutate(
     pr_petitioner_pos = dplyr::if_else(
@@ -218,15 +244,19 @@ analysis_data <- justice_data %>%
     court_period = factor(build_court_period(term), levels = c("Burger", "Rehnquist", "Roberts"))
   )
 
+# Table 1 models: baseline, justice FE, then justice+term FE.
 m3_1 <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos, data = analysis_data)
 m3_2 <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos + factor(justiceName), data = analysis_data)
 m3_3 <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos + factor(justiceName) + factor(term), data = analysis_data)
 
+# Export Table 1 in text format.
 stargazer(m3_1, m3_2, m3_3, type = "text", out = "HW3 Table1.txt")
 
+# Fit pitch-by-court-period interaction model used for Figure 3.
 m3_period_base <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos, data = analysis_data)
 m3_period_int <- lm(petitioner_vote ~ pitch_diff * court_period + pr_petitioner_pos, data = analysis_data)
 
+# Prediction grid for smooth interaction lines in Figure 3.
 m3_period_frame <- model.frame(m3_period_int)
 grid3 <- expand.grid(
   pitch_diff = seq(min(m3_period_frame$pitch_diff), max(m3_period_frame$pitch_diff), length.out = 120),
@@ -235,6 +265,7 @@ grid3 <- expand.grid(
 )
 grid3$pred <- predict(m3_period_int, newdata = grid3)
 
+# Plot predicted petitioner-vote probability across pitch by period.
 p3 <- ggplot(grid3, aes(x = pitch_diff, y = pred, color = court_period)) +
   geom_line(linewidth = 0.9) +
   labs(
@@ -244,8 +275,10 @@ p3 <- ggplot(grid3, aes(x = pitch_diff, y = pred, color = court_period)) +
   ) +
   theme_minimal()
 
+# Export Figure 3.
 ggsave("HW3 Fig3.png", plot = p3, width = 6, height = 4, dpi = 300)
 
+# Progressive model sequence required for Table 2.
 m_prog1 <- lm(petitioner_vote ~ pitch_diff, data = analysis_data)
 m_prog2 <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos, data = analysis_data)
 m_prog3 <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos + sgpetac, data = analysis_data)
@@ -253,12 +286,14 @@ m_prog4 <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos + sgpetac + court
 m_prog5 <- lm(petitioner_vote ~ pitch_diff * court_period + pr_petitioner_pos + sgpetac, data = analysis_data)
 m_prog6 <- lm(petitioner_vote ~ pitch_diff * pr_petitioner_pos + sgpetac + court_period, data = analysis_data)
 
+# Export Table 2 with models 1 through 6.
 stargazer(
   m_prog1, m_prog2, m_prog3, m_prog4, m_prog5, m_prog6,
   type = "text",
   out = "HW3 Table2.txt"
 )
 
+# Prediction grid for Figure 4 (pitch x court period interaction).
 prog5_frame <- model.frame(m_prog5)
 grid4 <- expand.grid(
   pitch_diff = seq(min(prog5_frame$pitch_diff), max(prog5_frame$pitch_diff), length.out = 120),
@@ -268,6 +303,7 @@ grid4 <- expand.grid(
 )
 grid4$pred <- predict(m_prog5, newdata = grid4)
 
+# Plot Figure 4 from Model 5 predictions.
 p4 <- ggplot(grid4, aes(x = pitch_diff, y = pred, color = court_period)) +
   geom_line(linewidth = 0.9) +
   labs(
@@ -277,8 +313,10 @@ p4 <- ggplot(grid4, aes(x = pitch_diff, y = pred, color = court_period)) +
   ) +
   theme_minimal()
 
+# Export Figure 4.
 ggsave("HW3 Fig4.png", plot = p4, width = 6, height = 4, dpi = 300)
 
+# Prediction grid for Figure 5 (pitch x pr_petitioner_pos interaction).
 prog6_frame <- model.frame(m_prog6)
 ref_period <- first_mode(prog6_frame$court_period)
 pr_levels <- c(-2, -1, 0, 1, 2)
@@ -292,6 +330,7 @@ grid5 <- expand.grid(
 grid5$pred <- predict(m_prog6, newdata = grid5)
 grid5$pr_petitioner_pos <- factor(grid5$pr_petitioner_pos, levels = pr_levels)
 
+# Plot Figure 5 using representative values of pr_petitioner_pos.
 p5 <- ggplot(grid5, aes(x = pitch_diff, y = pred, color = pr_petitioner_pos)) +
   geom_line(linewidth = 0.9) +
   labs(
@@ -302,18 +341,22 @@ p5 <- ggplot(grid5, aes(x = pitch_diff, y = pred, color = pr_petitioner_pos)) +
   ) +
   theme_minimal()
 
+# Export Figure 5.
 ggsave("HW3 Fig5.png", plot = p5, width = 6, height = 4, dpi = 300)
 
 # ---------------------------
 # 5) Section 3.4 Outlier Analysis and Validity
 # ---------------------------
 
+# Use progressive Model 6 as the final model for outlier diagnostics.
 final_model <- m_prog6
+# Compute assignment-required influence diagnostics.
 stud_resid <- rstudent(final_model)
 leverage <- hatvalues(final_model)
 cooks_d <- cooks.distance(final_model)
 dffits_val <- dffits(final_model)
 
+# Build one diagnostics table per model row.
 outlier_df <- data.frame(
   obs_id = seq_along(stud_resid),
   studentized_resid = stud_resid,
@@ -322,6 +365,7 @@ outlier_df <- data.frame(
   dffits = dffits_val
 )
 
+# Derive cutoffs from assignment formulas.
 n_model <- nrow(model.frame(final_model))
 k_model <- length(coef(final_model)) - 1
 thr_resid <- 2
@@ -329,6 +373,7 @@ thr_lev <- (2 * k_model + 2) / n_model
 thr_cook <- 4 / n_model
 thr_dffits <- 2 * sqrt(k_model / n_model)
 
+# Flag rows crossing any threshold and rows crossing all thresholds.
 outlier_df <- outlier_df %>%
   dplyr::mutate(
     is_outlier = abs(studentized_resid) > thr_resid |
@@ -342,6 +387,7 @@ outlier_df <- outlier_df %>%
     abs_dffits = abs(dffits)
   )
 
+# Visual diagnostics plot: leverage vs |DFFITS| with threshold lines.
 p6 <- ggplot(outlier_df, aes(x = abs_dffits, y = leverage, color = is_outlier)) +
   geom_point(alpha = 0.75) +
   geom_hline(yintercept = thr_lev, linetype = "dashed", color = "blue") +
@@ -361,12 +407,16 @@ p6 <- ggplot(outlier_df, aes(x = abs_dffits, y = leverage, color = is_outlier)) 
   ) +
   theme_minimal()
 
+# Export Figure 6.
 ggsave("HW3 Fig6.png", plot = p6, width = 6, height = 4, dpi = 300)
 
+# Align analysis_data rows to the exact estimation sample used in final_model.
 model_rows <- as.integer(rownames(model.frame(final_model)))
 analysis_data_used <- analysis_data[model_rows, ]
+# Remove flagged outliers for robustness comparison model.
 clean_data <- analysis_data_used[!outlier_df$is_outlier, ]
 
+# Fit final specification on full sample and outlier-excluded sample.
 model_full <- lm(
   petitioner_vote ~ pitch_diff * pr_petitioner_pos + sgpetac + court_period,
   data = analysis_data_used
@@ -376,8 +426,10 @@ model_clean <- lm(
   data = clean_data
 )
 
+# Export full-vs-clean comparison table (Table 3).
 stargazer(model_full, model_clean, type = "text", out = "HW3 Table3.txt")
 
+# Save concise diagnostics summary values for narrative support.
 outlier_summary <- c(
   "Outlier Summary (Section 3.4)",
   paste("Model observations:", n_model),
@@ -395,11 +447,13 @@ writeLines(outlier_summary, "HW3_OutlierSummary.txt")
 # 6) Draft Answers for Q5-Q17
 # ---------------------------
 
+# Format numeric outputs consistently for text answers.
 fmt_num <- function(x, digits = 3) {
   formatC(x, format = "f", digits = digits)
 }
 
 # Q5
+# Build Q5 narrative from computed distribution statistics.
 q5_text <- paste0(
   "petitioner_vote is binary and fairly balanced but slightly petitioner-leaning: mean = ",
   fmt_num(mean(justice_data$petitioner_vote, na.rm = TRUE), 3),
@@ -417,6 +471,7 @@ q5_text <- paste0(
 )
 
 # Q6/Q7
+# Build Q6 narrative on variable construction and interpretation caveats.
 q6_text <- paste(
   "pitch_diff is measured as petitioner_pitch minus respondent_pitch and captures whether a justice spoke at higher or lower pitch to one side relative to the other.",
   "Supplemental documentation indicates the pitch measure is standardized before differencing, which helps comparability across speakers (e.g., men vs. women with different baseline pitch ranges) and reduces sensitivity to absolute-frequency measurement noise.",
@@ -424,22 +479,26 @@ q6_text <- paste(
   "A challenge is that dictionary methods ignore context: sarcasm, negation, legal jargon, and polysemy can cause words to be counted as 'positive' even when tone is neutral or negative."
 )
 
+# Build Q7 narrative on dictionary-based measurement error risks.
 q7_text <- paste(
   "Dictionary-based coding can introduce false positives (words marked positive in neutral/legal context), false negatives (missed positive phrasing not in the dictionary), and context errors (negation, irony, sarcasm).",
   "These measurement errors generally add noise and can attenuate coefficients toward zero, but if misclassification is systematic by justice, issue area, or period, it can also bias effect estimates and distort substantive interpretation."
 )
 
 # Q8
+# Split Figure 1 summaries into no-amicus vs amicus columns for delta reporting.
 fig1_no <- fig1_summary %>%
   dplyr::filter(sgpetac_label == "No Amicus") %>%
   dplyr::select(justiceName, prop_no = prop_petitioner_vote)
 fig1_yes <- fig1_summary %>%
   dplyr::filter(sgpetac_label == "Amicus") %>%
   dplyr::select(justiceName, prop_yes = prop_petitioner_vote)
+# Join and compute within-justice change in petitioner-vote share.
 fig1_change <- dplyr::left_join(fig1_no, fig1_yes, by = "justiceName") %>%
   dplyr::mutate(delta = prop_yes - prop_no) %>%
   dplyr::arrange(justiceName)
 
+# Convert Figure 1 change table to a compact sentence fragment.
 q8_detail <- paste(
   paste0(
     fig1_change$justiceName, ": ",
@@ -450,6 +509,7 @@ q8_detail <- paste(
   collapse = "; "
 )
 
+# Build Q8 narrative from justice-level amicus differences.
 q8_text <- paste(
   "Across all three chief justices, petitioner-win rates are higher when the Solicitor General supports the petitioner.",
   q8_detail,
@@ -457,16 +517,19 @@ q8_text <- paste(
 )
 
 # Q9
+# Split Figure 2 summaries into below-vs-above pitch groups.
 fig2_below <- fig2_summary %>%
   dplyr::filter(high_pitch_diff == "Below Avg. Pitch Differential") %>%
   dplyr::select(court_period, prop_below = prop_petitioner_vote)
 fig2_above <- fig2_summary %>%
   dplyr::filter(high_pitch_diff == "Above Avg. Pitch Differential") %>%
   dplyr::select(court_period, prop_above = prop_petitioner_vote)
+# Join and compute period-specific differences.
 fig2_change <- dplyr::left_join(fig2_below, fig2_above, by = "court_period") %>%
   dplyr::mutate(delta_above_minus_below = prop_above - prop_below) %>%
   dplyr::arrange(court_period)
 
+# Convert Figure 2 period deltas to narrative-ready text.
 q9_detail <- paste(
   paste0(
     fig2_change$court_period, ": Above = ", fmt_num(fig2_change$prop_above, 3),
@@ -476,6 +539,7 @@ q9_detail <- paste(
   collapse = "; "
 )
 
+# Build Q9 narrative from period-level pitch-group contrasts.
 q9_text <- paste(
   "Higher pitch-difference observations are generally associated with lower petitioner-win rates in Rehnquist and Roberts periods, while the Burger period shows little difference.",
   q9_detail,
@@ -483,6 +547,7 @@ q9_text <- paste(
 )
 
 # Q10/Q11/Q12/Q13/Q14
+# Pull model summaries and key statistics used in Q10-Q14 text.
 m3_1_coef <- coef(summary(m3_1))
 m3_2_coef <- coef(summary(m3_2))
 m3_3_coef <- coef(summary(m3_3))
@@ -505,6 +570,7 @@ term_sig_n <- sum(
     m3_3_coef[, "Pr(>|t|)"] < 0.05
 )
 
+# Build Q10 narrative on baseline predictors.
 q10_text <- paste0(
   "In the baseline model (m3_1), pitch_diff is negative and statistically significant (b = ",
   fmt_num(pitch_b, 3), ", p = ", signif(pitch_p, 3),
@@ -513,6 +579,7 @@ q10_text <- paste0(
   ", p = ", signif(pr_p, 3), "), so lexical positivity differences do not show a clear linear association in this specification."
 )
 
+# Build Q11 narrative on the effect of justice fixed effects.
 q11_text <- paste0(
   "Controlling for justice fixed effects is important because justices have persistent baseline voting tendencies that can confound speech-effect estimates. ",
   "After adding justice controls, adjusted R2 rises from ", fmt_num(adj_m3_1, 3),
@@ -521,6 +588,7 @@ q11_text <- paste0(
   "The pitch_diff estimate remains negative and similar in magnitude, indicating the relationship is not driven only by cross-justice composition."
 )
 
+# Build Q12 narrative on adding term indicators and adjusted R-squared change.
 q12_text <- paste0(
   "Adding term indicators further increases adjusted R2 from ", fmt_num(adj_m3_2, 3),
   " to ", fmt_num(adj_m3_3, 3), ", with ", term_sig_n,
@@ -533,6 +601,7 @@ slope_burger <- unname(coef_period["pitch_diff"])
 slope_rehnquist <- slope_burger + unname(coef_period["pitch_diff:court_periodRehnquist"])
 slope_roberts <- slope_burger + unname(coef_period["pitch_diff:court_periodRoberts"])
 
+# Build Q13 narrative from period-specific interaction slopes.
 q13_text <- paste0(
   "In the pitch_diff * court_period interaction model, the negative slope is strongest in the Rehnquist period and also negative in the Roberts period: ",
   "Burger slope = ", fmt_num(slope_burger, 3),
@@ -545,6 +614,7 @@ adj_prog <- sapply(
   list(m_prog1, m_prog2, m_prog3, m_prog4, m_prog5, m_prog6),
   function(m) summary(m)$adj.r.squared
 )
+# Build Q14 narrative from progressive-model fit comparisons.
 q14_text <- paste0(
   "Progressive models show small fit gains from Model 1 to 2, a clearer jump when sgpetac is added (Model 3), and minor incremental changes from additional period and interaction terms. ",
   "Adjusted R2 values are: M1=", fmt_num(adj_prog[1], 3),
@@ -557,6 +627,7 @@ q14_text <- paste0(
 )
 
 # Q16/Q17
+# Count how many diagnostic rules each observation violates.
 outlier_df <- outlier_df %>%
   dplyr::mutate(
     n_flags = as.integer(abs(studentized_resid) > thr_resid) +
@@ -565,16 +636,19 @@ outlier_df <- outlier_df %>%
       as.integer(abs(dffits) > thr_dffits)
   )
 
+# Attach case identifiers to outlier diagnostics for interpretability in Q16.
 outlier_cases <- cbind(
   outlier_df,
   analysis_data_used[, c("docketId", "docket", "justiceName", "term")]
 )
 
+# Rank outliers by number of threshold violations and influence magnitude.
 top_outliers <- outlier_cases %>%
   dplyr::filter(is_outlier) %>%
   dplyr::arrange(desc(n_flags), desc(abs_dffits)) %>%
   dplyr::slice(1:5)
 
+# Convert top outlier rows into concise text snippet.
 q16_top <- paste(
   paste0(
     "obs ", top_outliers$obs_id, " (", top_outliers$docketId, ", ",
@@ -584,6 +658,7 @@ q16_top <- paste(
   collapse = "; "
 )
 
+# Build Q16 narrative summarizing outlier counts and notable cases.
 q16_text <- paste0(
   "Using assignment thresholds, ", sum(outlier_df$is_outlier),
   " observations are flagged by at least one diagnostic and ",
@@ -592,6 +667,7 @@ q16_text <- paste0(
   "Most high-impact cases are flagged by leverage, Cook's D, and DFFITS simultaneously, while none exceed the |studentized residual| > 2 rule."
 )
 
+# Compare coefficients and standard errors between full and clean models.
 coef_full <- coef(summary(model_full))
 coef_clean <- coef(summary(model_clean))
 common_terms <- intersect(rownames(coef_full), rownames(coef_clean))
@@ -603,6 +679,7 @@ comp <- data.frame(
   se_clean = coef_clean[common_terms, "Std. Error"]
 )
 
+# Helper for standardized "full -> clean" coefficient text formatting.
 get_comp <- function(term_name) {
   row <- comp[comp$term == term_name, , drop = FALSE]
   paste0(
@@ -611,6 +688,7 @@ get_comp <- function(term_name) {
   )
 }
 
+# Build Q17 narrative from side-by-side coefficient/SE changes.
 q17_text <- paste(
   "Removing flagged outliers changes some coefficients but preserves the core qualitative finding that pitch_diff remains negative and SG amicus support remains positive/significant.",
   get_comp("pitch_diff"),
@@ -619,6 +697,7 @@ q17_text <- paste(
   "The clean-sample model has similar directional conclusions but somewhat different magnitudes and uncertainty, so results look broadly robust with moderate sensitivity for interaction terms."
 )
 
+# Assemble all section draft answers into one output vector.
 answers_q5_q17 <- c(
   "Section 3.2-3.4 Draft Answers (Q5-Q17)",
   "",
@@ -649,4 +728,5 @@ answers_q5_q17 <- c(
   paste0("Q17: ", q17_text)
 )
 
+# Save Q5-Q17 draft answers for use in the final PDF write-up.
 writeLines(answers_q5_q17, "HW3_DraftAnswers_Q5_Q17.txt")
