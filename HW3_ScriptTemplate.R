@@ -57,6 +57,16 @@ wrap_plot_text <- function(x, width = 90) {
 # Close current code block.
 }
 
+# Build evenly spaced axis breaks that also label intermediate grid lines.
+# Assign computed result to seq_axis_breaks.
+seq_axis_breaks <- function(x, by, pad = 0) {
+  # Assign computed result to rng.
+  rng <- range(x, na.rm = TRUE)
+  # Execute: seq(floor((rng[1] - pad) / by) * by, ceiling((rng[2] + pad) / by) * by, by = by)
+  seq(floor((rng[1] - pad) / by) * by, ceiling((rng[2] + pad) / by) * by, by = by)
+# Close current code block.
+}
+
 # Shared figure styling: left-aligned titles and italic caption footnotes.
 # Assign computed result to hw3_plot_theme.
 hw3_plot_theme <- theme_minimal() +
@@ -313,6 +323,10 @@ p1 <- ggplot(fig1_summary, aes(x = sgpetac_label, y = prop_petitioner_vote, fill
   scale_fill_manual(values = c("No Amicus" = "blue", "Amicus" = "red")) +
   # Execute: coord_cartesian(ylim = c(0, 1)) +
   coord_cartesian(ylim = c(0, 1)) +
+  scale_y_continuous(
+    breaks = seq(0, 1, by = 0.1),
+    minor_breaks = seq(0, 1, by = 0.05)
+  ) +
   # Execute: labs(
   labs(
     title = wrap_plot_text("Figure 1. Petitioner Vote Share by SG Amicus Status and Chief Justice", 70),
@@ -408,6 +422,10 @@ p2 <- ggplot(fig2_summary, aes(x = high_pitch_diff, y = prop_petitioner_vote, fi
   )) +
   # Execute: coord_cartesian(ylim = c(0, 1)) +
   coord_cartesian(ylim = c(0, 1)) +
+  scale_y_continuous(
+    breaks = seq(0, 1, by = 0.1),
+    minor_breaks = seq(0, 1, by = 0.05)
+  ) +
   # Execute: labs(
   labs(
     title = wrap_plot_text("Figure 2. Petitioner Vote Share by Pitch Differential Group and Court Period", 70),
@@ -498,6 +516,14 @@ grid3$pred <- predict(m3_period_int, newdata = grid3)
 p3 <- ggplot(grid3, aes(x = pitch_diff, y = pred, color = court_period)) +
   # Execute: geom_line(linewidth = 0.9) +
   geom_line(linewidth = 0.9) +
+  scale_x_continuous(
+    breaks = seq_axis_breaks(grid3$pitch_diff, by = 2.5),
+    minor_breaks = seq_axis_breaks(grid3$pitch_diff, by = 1.25)
+  ) +
+  scale_y_continuous(
+    breaks = seq_axis_breaks(grid3$pred, by = 0.25),
+    minor_breaks = seq_axis_breaks(grid3$pred, by = 0.125)
+  ) +
   # Execute: labs(
   labs(
     title = wrap_plot_text("Figure 3. Predicted Petitioner Vote Probability by Pitch Differential and Court Period", 70),
@@ -574,6 +600,14 @@ grid4$pred <- predict(m_prog5, newdata = grid4)
 p4 <- ggplot(grid4, aes(x = pitch_diff, y = pred, color = court_period)) +
   # Execute: geom_line(linewidth = 0.9) +
   geom_line(linewidth = 0.9) +
+  scale_x_continuous(
+    breaks = seq_axis_breaks(grid4$pitch_diff, by = 2.5),
+    minor_breaks = seq_axis_breaks(grid4$pitch_diff, by = 1.25)
+  ) +
+  scale_y_continuous(
+    breaks = seq_axis_breaks(grid4$pred, by = 0.25),
+    minor_breaks = seq_axis_breaks(grid4$pred, by = 0.125)
+  ) +
   # Execute: labs(
   labs(
     title = wrap_plot_text("Figure 4. Predicted Petitioner Vote Probability by Pitch Differential and Court Period (Model 5)", 70),
@@ -631,6 +665,14 @@ grid5$pr_petitioner_pos <- factor(grid5$pr_petitioner_pos, levels = pr_levels)
 p5 <- ggplot(grid5, aes(x = pitch_diff, y = pred, color = pr_petitioner_pos)) +
   # Execute: geom_line(linewidth = 0.9) +
   geom_line(linewidth = 0.9) +
+  scale_x_continuous(
+    breaks = seq_axis_breaks(grid5$pitch_diff, by = 2.5),
+    minor_breaks = seq_axis_breaks(grid5$pitch_diff, by = 1.25)
+  ) +
+  scale_y_continuous(
+    breaks = pretty(grid5$pred, n = 8),
+    minor_breaks = pretty(grid5$pred, n = 16)
+  ) +
   # Execute: labs(
   labs(
     title = wrap_plot_text("Figure 5. Predicted Petitioner Vote Probability by Pitch Differential and Petitioner Positivity", 70),
@@ -761,6 +803,14 @@ p6 <- ggplot(outlier_df, aes(x = abs_dffits, y = leverage, color = is_outlier)) 
   ) +
   # Execute: scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red")) +
   scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red")) +
+  scale_x_continuous(
+    breaks = pretty(outlier_df$abs_dffits, n = 10),
+    minor_breaks = pretty(outlier_df$abs_dffits, n = 20)
+  ) +
+  scale_y_continuous(
+    breaks = pretty(outlier_df$leverage, n = 10),
+    minor_breaks = pretty(outlier_df$leverage, n = 20)
+  ) +
   # Execute: labs(
   labs(
     title = wrap_plot_text("Figure 6. Influence Diagnostics: Leverage vs |DFFITS|", 70),
