@@ -49,6 +49,30 @@ first_mode <- function(x) {
 # Close current code block.
 }
 
+# Wrap long plot text (titles/subtitles/captions) so it fits exported figures.
+# Assign computed result to wrap_plot_text.
+wrap_plot_text <- function(x, width = 90) {
+  # Execute: paste(strwrap(x, width = width), collapse = "\n")
+  paste(strwrap(x, width = width), collapse = "\n")
+# Close current code block.
+}
+
+# Shared figure styling: left-aligned titles and italic caption footnotes.
+# Assign computed result to hw3_plot_theme.
+hw3_plot_theme <- theme_minimal() +
+  theme(
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    plot.title = element_text(size = 12, face = "bold", margin = margin(b = 4)),
+    plot.subtitle = element_text(size = 10, margin = margin(b = 8), lineheight = 1.05),
+    plot.caption = element_text(face = "italic", hjust = 0, size = 8.5, lineheight = 1.05, margin = margin(t = 8)),
+    plot.margin = margin(t = 10, r = 14, b = 14, l = 10)
+  )
+
+# Reusable note for court-period labels shown in multiple figures.
+# Assign computed result to court_period_year_note.
+court_period_year_note <- "Court periods: Burger (1969-1985), Rehnquist (1986-2004), Roberts (2005+)."
+
 # ---------------------------
 # 2) Section 3.1 Preliminaries
 # ---------------------------
@@ -291,16 +315,18 @@ p1 <- ggplot(fig1_summary, aes(x = sgpetac_label, y = prop_petitioner_vote, fill
   coord_cartesian(ylim = c(0, 1)) +
   # Execute: labs(
   labs(
+    title = wrap_plot_text("Figure 1. Petitioner Vote Share by SG Amicus Status and Chief Justice", 70),
+    subtitle = wrap_plot_text("Bar heights show the observed proportion of votes for the petitioner among Burger, Rehnquist, and Roberts.", 95),
     # Execute: x = "Solicitor General Amicus (sgpetac)",
     x = "Solicitor General Amicus (sgpetac)",
     # Execute: y = "Proportion Voting for Petitioner",
     y = "Proportion Voting for Petitioner",
     # Execute: fill = ""
-    fill = ""
+    fill = "",
+    caption = wrap_plot_text("Notes: Figure reports observed (unmodeled) petitioner-vote shares by SG amicus participation status for the three chief justices.", 120)
   # Close function call arguments.
   ) +
-  # Execute: theme_minimal()
-  theme_minimal()
+  hw3_plot_theme
 
 # Render Figure 1 in the Plots pane when running the script.
 # Execute: print(p1)
@@ -308,7 +334,7 @@ print(p1)
 
 # Export Figure 1 with required dimensions/DPI.
 # Save figure to disk with specified dimensions.
-ggsave("HW3 Fig1.png", plot = p1, width = 6, height = 4, dpi = 300)
+ggsave("HW3 Fig1.png", plot = p1, width = 8.5, height = 6.5, dpi = 300)
 
 # Figure 2 source data: same justices plus pitch and term fields.
 # Assign computed result to fig2_data.
@@ -384,16 +410,21 @@ p2 <- ggplot(fig2_summary, aes(x = high_pitch_diff, y = prop_petitioner_vote, fi
   coord_cartesian(ylim = c(0, 1)) +
   # Execute: labs(
   labs(
+    title = wrap_plot_text("Figure 2. Petitioner Vote Share by Pitch Differential Group and Court Period", 70),
+    subtitle = wrap_plot_text("Pitch differential is split at the sample mean; bars show observed petitioner-vote shares within each court period.", 95),
     # Execute: x = "Pitch Differential Group",
     x = "Pitch Differential Group",
     # Execute: y = "Proportion Voting for Petitioner",
     y = "Proportion Voting for Petitioner",
     # Execute: fill = ""
-    fill = ""
+    fill = "",
+    caption = wrap_plot_text(paste(
+      "Notes: Figure reports observed (unmodeled) petitioner-vote shares for below-average vs above-average pitch differential groups.",
+      court_period_year_note
+    ), 120)
   # Close function call arguments.
   ) +
-  # Execute: theme_minimal()
-  theme_minimal() +
+  hw3_plot_theme +
   theme(axis.text.x = element_text(angle = 15, hjust = 1))
 
 # Render Figure 2 in the Plots pane when running the script.
@@ -402,7 +433,7 @@ print(p2)
 
 # Export Figure 2 with required dimensions/DPI.
 # Save figure to disk with specified dimensions.
-ggsave("HW3 Fig2.png", plot = p2, width = 6, height = 4, dpi = 300)
+ggsave("HW3 Fig2.png", plot = p2, width = 8.5, height = 6.5, dpi = 300)
 
 # ---------------------------
 # 4) Section 3.3 Regression Analyses
@@ -469,16 +500,22 @@ p3 <- ggplot(grid3, aes(x = pitch_diff, y = pred, color = court_period)) +
   geom_line(linewidth = 0.9) +
   # Execute: labs(
   labs(
+    title = wrap_plot_text("Figure 3. Predicted Petitioner Vote Probability by Pitch Differential and Court Period", 70),
+    subtitle = wrap_plot_text("Predictions from interaction model: petitioner_vote ~ pitch_diff * court_period + pr_petitioner_pos.", 95),
     # Execute: x = "Pitch Differential",
     x = "Pitch Differential",
     # Execute: y = "Predicted Pr(Vote for Petitioner)",
     y = "Predicted Pr(Vote for Petitioner)",
     # Execute: color = "Court Period"
-    color = "Court Period"
+    color = "Court Period",
+    caption = wrap_plot_text(paste(
+      "Notes: Lines show model-predicted values with pr_petitioner_pos held at its sample mean.",
+      "This is the baseline court-period interaction specification used in Section 3.3.",
+      court_period_year_note
+    ), 120)
   # Close function call arguments.
   ) +
-  # Execute: theme_minimal()
-  theme_minimal()
+  hw3_plot_theme
 
 # Render Figure 3 in the Plots pane when running the script.
 # Execute: print(p3)
@@ -486,7 +523,7 @@ print(p3)
 
 # Export Figure 3.
 # Save figure to disk with specified dimensions.
-ggsave("HW3 Fig3.png", plot = p3, width = 6, height = 4, dpi = 300)
+ggsave("HW3 Fig3.png", plot = p3, width = 8.5, height = 6.5, dpi = 300)
 
 # Progressive model sequence required for Table 2.
 # Fit linear model and store result in m_prog1.
@@ -539,16 +576,22 @@ p4 <- ggplot(grid4, aes(x = pitch_diff, y = pred, color = court_period)) +
   geom_line(linewidth = 0.9) +
   # Execute: labs(
   labs(
+    title = wrap_plot_text("Figure 4. Predicted Petitioner Vote Probability by Pitch Differential and Court Period (Model 5)", 70),
+    subtitle = wrap_plot_text("Predictions from progressive Model 5: petitioner_vote ~ pitch_diff * court_period + pr_petitioner_pos + sgpetac.", 95),
     # Execute: x = "Pitch Differential",
     x = "Pitch Differential",
     # Execute: y = "Predicted Pr(Vote for Petitioner)",
     y = "Predicted Pr(Vote for Petitioner)",
     # Execute: color = "Court Period"
-    color = "Court Period"
+    color = "Court Period",
+    caption = wrap_plot_text(paste(
+      "Notes: Lines show Model 5 predictions with pr_petitioner_pos and sgpetac held at their sample means.",
+      "Figure 4 differs from Figure 3 by adding sgpetac to the specification.",
+      court_period_year_note
+    ), 120)
   # Close function call arguments.
   ) +
-  # Execute: theme_minimal()
-  theme_minimal()
+  hw3_plot_theme
 
 # Render Figure 4 in the Plots pane when running the script.
 # Execute: print(p4)
@@ -556,7 +599,7 @@ print(p4)
 
 # Export Figure 4.
 # Save figure to disk with specified dimensions.
-ggsave("HW3 Fig4.png", plot = p4, width = 6, height = 4, dpi = 300)
+ggsave("HW3 Fig4.png", plot = p4, width = 8.5, height = 6.5, dpi = 300)
 
 # Prediction grid for Figure 5 (pitch x pr_petitioner_pos interaction).
 # Assign computed result to prog6_frame.
@@ -590,6 +633,7 @@ p5 <- ggplot(grid5, aes(x = pitch_diff, y = pred, color = pr_petitioner_pos)) +
   geom_line(linewidth = 0.9) +
   # Execute: labs(
   labs(
+    title = wrap_plot_text("Figure 5. Predicted Petitioner Vote Probability by Pitch Differential and Petitioner Positivity", 70),
     # Execute: x = "Pitch Differential",
     x = "Pitch Differential",
     # Execute: y = "Predicted Pr(Vote for Petitioner)",
@@ -597,11 +641,19 @@ p5 <- ggplot(grid5, aes(x = pitch_diff, y = pred, color = pr_petitioner_pos)) +
     # Execute: color = "pr_petitioner_pos",
     color = "pr_petitioner_pos",
     # Execute: subtitle = paste("Court period held at:", ref_period)
-    subtitle = paste("Court period held at:", ref_period)
+    subtitle = wrap_plot_text(paste(
+      "Predictions from progressive Model 6 with pitch_diff * pr_petitioner_pos interaction.",
+      "Court period held at:",
+      ref_period
+    ), 95),
+    caption = wrap_plot_text(paste(
+      "Notes: Lines show Model 6 predictions evaluated at representative pr_petitioner_pos values (-2, -1, 0, 1, 2),",
+      "with sgpetac held at its sample mean and court period fixed at the modal category.",
+      court_period_year_note
+    ), 120)
   # Close function call arguments.
   ) +
-  # Execute: theme_minimal()
-  theme_minimal()
+  hw3_plot_theme
 
 # Render Figure 5 in the Plots pane when running the script.
 # Execute: print(p5)
@@ -609,7 +661,7 @@ print(p5)
 
 # Export Figure 5.
 # Save figure to disk with specified dimensions.
-ggsave("HW3 Fig5.png", plot = p5, width = 6, height = 4, dpi = 300)
+ggsave("HW3 Fig5.png", plot = p5, width = 8.5, height = 6.5, dpi = 300)
 
 # ---------------------------
 # 5) Section 3.4 Outlier Analysis and Validity
@@ -711,16 +763,18 @@ p6 <- ggplot(outlier_df, aes(x = abs_dffits, y = leverage, color = is_outlier)) 
   scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red")) +
   # Execute: labs(
   labs(
+    title = wrap_plot_text("Figure 6. Influence Diagnostics: Leverage vs |DFFITS|", 70),
+    subtitle = wrap_plot_text("Outlier screening for the final regression model; dashed lines mark assignment thresholds.", 95),
     # Execute: x = "|DFFITS|",
     x = "|DFFITS|",
     # Execute: y = "Leverage",
     y = "Leverage",
     # Execute: color = "Outlier"
-    color = "Outlier"
+    color = "Outlier",
+    caption = wrap_plot_text("Notes: Points are flagged as outliers when any assignment threshold is exceeded (studentized residual, leverage, Cook's D, or |DFFITS|). Labels mark observations exceeding all thresholds.", 120)
   # Close function call arguments.
   ) +
-  # Execute: theme_minimal()
-  theme_minimal()
+  hw3_plot_theme
 
 # Render Figure 6 in the Plots pane when running the script.
 # Execute: print(p6)
@@ -728,7 +782,7 @@ print(p6)
 
 # Export Figure 6.
 # Save figure to disk with specified dimensions.
-ggsave("HW3 Fig6.png", plot = p6, width = 6, height = 4, dpi = 300)
+ggsave("HW3 Fig6.png", plot = p6, width = 8.5, height = 6.5, dpi = 300)
 
 # Align analysis_data rows to the exact estimation sample used in final_model.
 # Assign computed result to model_rows.
