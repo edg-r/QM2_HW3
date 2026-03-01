@@ -8,17 +8,41 @@
 # Keeping this line commented if your submission rules require a fixed working directory.
 setwd('/Users/edgar/Documents/01 Projects/GPCO 454 - QM2 - Ravanilla/HomeWork/HW3')
 
-# Suppressing startup messages while loading packages.
-suppressPackageStartupMessages({
-  library(dplyr)     # Data manipulation verbs and piping pipelines
-  library(tidyr)     # Missing-data helpers and reshaping utilities
-  library(ggplot2)   # Plot creation and figure export support
-  library(stargazer) # Regression table formatting for assignment outputs
-})
+library(dplyr)     # Data manipulation verbs and piping pipelines
+library(tidyr)     # Missing-data helpers and reshaping utilities
+library(ggplot2)   # Plot creation and figure export support
+library(stargazer) # Regression table formatting for assignment outputs
+
+# Writing plain-text outputs to minimal HTML for clean copy/paste into Word.
+html_escape <- function(x) {
+  x <- gsub("&", "&amp;", x, fixed = TRUE)
+  x <- gsub("<", "&lt;", x, fixed = TRUE)
+  x <- gsub(">", "&gt;", x, fixed = TRUE)
+  x
+}
+
+write_html_pre <- function(lines, file, title = "HW3 Output") {
+  html <- c(
+    "<!DOCTYPE html>",
+    "<html>",
+    "<head>",
+    "  <meta charset=\"utf-8\">",
+    paste0("  <title>", title, "</title>"),
+    "  <style>body{font-family:Calibri,Arial,sans-serif;margin:24px;} pre{white-space:pre-wrap;line-height:1.35;}</style>",
+    "</head>",
+    "<body>",
+    "  <pre>",
+    html_escape(paste(lines, collapse = "\n")),
+    "  </pre>",
+    "</body>",
+    "</html>"
+  )
+  writeLines(html, file)
+}
 
 # Using this helper to turn each term year into a court-period label.
 build_court_period <- function(term_vec) {
-  dplyr::case_when(
+  case_when(
     term_vec >= 1969 & term_vec <= 1985 ~ "Burger",
     term_vec >= 1986 & term_vec <= 2004 ~ "Rehnquist",
     term_vec >= 2005 ~ "Roberts",
@@ -72,89 +96,7 @@ justice_data <- read.table(
 # Printing structure and overall summaries for quick diagnostics/Q1-Q2 support.
 str(justice_data)
 summary(justice_data)
-
-# Counting unique entities referenced in the write-up.
-n_unique_dockets <- dplyr::n_distinct(justice_data$docket)
-n_unique_caseid <- dplyr::n_distinct(justice_data$caseId)
-n_unique_justices <- dplyr::n_distinct(justice_data$justiceName)
-
-# Building variable-level and total missingness diagnostics.
-missing_by_var <- colSums(is.na(justice_data))
-total_missing <- sum(is.na(justice_data))
-missing_table <- data.frame(
-  variable = names(missing_by_var),
-  missing_n = as.integer(missing_by_var),
-  missing_pct = round(as.integer(missing_by_var) / nrow(justice_data) * 100, 2)
-)
-missing_table_nonzero <- missing_table %>%
-  dplyr::filter(missing_n > 0) %>%
-  dplyr::arrange(desc(missing_n), variable)
-
-# Saving missing-value summary for submission support.
-write.table(
-  missing_table_nonzero,
-  file = "HW3_MissingValues_3_1.txt",
-  sep = "\t",
-  row.names = FALSE,
-  quote = FALSE
-)
-
-# Checking whether docket-justice rows are unique (unit-of-observation validation).
-n_unique_docket_justice <- nrow(unique(justice_data[, c("docketId", "justiceName")]))
-n_duplicate_docket_justice <- nrow(justice_data) - n_unique_docket_justice
-
-# Drafting Q1 narrative using computed descriptive values.
-q1_answer <- paste0(
-  "This dataset contains ", nrow(justice_data), " justice-level observations across ",
-  n_unique_dockets, " unique dockets (", n_unique_caseid, " unique case IDs) and ",
-  n_unique_justices, " justices. ",
-  "Each row includes vote outcomes (petitioner_vote), oral-argument speech measures (including pitch_diff), and case context such as term and amicus variables. ",
-  "This structure supports testing whether oral-argument emotional cues are associated with Supreme Court voting behavior."
-)
-
-# Drafting Q2 narrative focused on observation unit and duplicate check.
-q2_answer <- paste0(
-  "The unit of observation is one justice-docket vote record. ",
-  "docketId + justiceName combinations are unique in this dataset (duplicates = ",
-  n_duplicate_docket_justice, "), which is consistent with that unit."
-)
-
-# Drafting Q3 narrative for dependent-variable meaning and relevance.
-q3_answer <- paste(
-  "A vote in favor of the petitioner is coded as petitioner_vote = 1.",
-  "This is substantively important because these votes determine case outcomes and legal precedent.",
-  "The assignment uses this outcome to evaluate whether emotional dynamics in oral argument relate to judicial decisions."
-)
-
-# Drafting Q4 narrative using computed missingness.
-q4_answer <- paste0(
-  "There are ", total_missing, " missing values in total. ",
-  nrow(missing_table_nonzero), " variables have missing data, and each has 232 missing observations (4.45% of rows). ",
-  "Missingness matters because complete-case estimation can reduce sample size and potentially bias results if missingness is non-random."
-)
-
-# Combining all Section 3.1 draft responses into one text vector.
-answers_q1_q4 <- c(
-  "Section 3.1 Draft Answers (Q1-Q4)",
-  "",
-  paste0("Q1: ", q1_answer),
-  "",
-  paste0("Q2: ", q2_answer),
-  "",
-  paste0("Q3: ", q3_answer),
-  "",
-  paste0("Q4: ", q4_answer),
-  "",
-  "Variables with missing values (Q4 support):",
-  paste0(
-    missing_table_nonzero$variable, ": ",
-    missing_table_nonzero$missing_n, " (",
-    missing_table_nonzero$missing_pct, "%)"
-  )
-)
-
-# Writing Section 3.1 draft answers to a standalone file.
-writeLines(answers_q1_q4, con = "HW3_Section3_1_Q1_Q4_DraftAnswers.txt")
+View(justice_data) #Opens data for viewing in new tab
 
 # ---------------------------
 # 3) Section 3.2 Descriptive Stats and Plots
@@ -167,8 +109,8 @@ print(summary_3_2)
 # Building analysis features used in descriptive plots.
 pitch_mean <- mean(justice_data$pitch_diff, na.rm = TRUE)
 justice_data <- justice_data %>%
-  dplyr::mutate(
-    high_pitch_diff = ifelse(pitch_diff > pitch_mean, 1, 0),                          # Above-mean pitch indicator
+  mutate(
+    high_pitch_diff = ifelse(pitch_diff > pitch_mean, 1, 0), #if pitch is above the mean then give a 1
     high_pitch_diff = factor(high_pitch_diff, levels = c(0, 1)),                      # Ordered binary factor
     court_period = build_court_period(term),                                           # Term-to-court-period mapping
     court_period = factor(court_period, levels = c("Burger", "Rehnquist", "Roberts")) # Stable plotting/model order
@@ -184,12 +126,12 @@ chief_data <- justice_data %>%
   dplyr::select(justiceName, petitioner_vote, sgpetac) %>%
   tidyr::drop_na()
 
-# Calculating petitioner-vote share by justice and SG amicus status.
+# Calculating petitioner-vote share by justice and Solicitor General amicus status 1= filed 0 = not filed.
 fig1_summary <- chief_data %>%
-  dplyr::group_by(justiceName, sgpetac) %>%
-  dplyr::summarise(prop_petitioner_vote = mean(petitioner_vote), .groups = "drop") %>%
-  dplyr::mutate(
-    sgpetac_label = ifelse(sgpetac == 1, "Amicus", "No Amicus"),
+  group_by(justiceName, sgpetac) %>% 
+  summarise(prop_petitioner_vote = mean(petitioner_vote), .groups = "drop") %>%
+  mutate(
+    sgpetac_label = ifelse(sgpetac == 1, "Amicus", "No Amicus"), #creates a dummy where if the SG filed it is labeld amicus
     sgpetac_label = factor(sgpetac_label, levels = c("No Amicus", "Amicus"))
   )
 
@@ -312,8 +254,8 @@ m3_2 <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos + factor(justiceName
 # Running linear model and storing result in m3_3.
 m3_3 <- lm(petitioner_vote ~ pitch_diff + pr_petitioner_pos + factor(justiceName) + factor(term), data = analysis_data)
 
-# Saving Table 1 in text format.
-stargazer(m3_1, m3_2, m3_3, type = "text", out = "HW3 Table1.txt")
+# Saving Table 1 in HTML format for easy Word paste.
+stargazer(m3_1, m3_2, m3_3, type = "html", out = "HW3 Table1.html")
 
 # Running pitch-by-court-period interaction model used for Figure 3.
 # Running linear model and storing result in m3_period_base.
@@ -380,8 +322,8 @@ m_prog6 <- lm(petitioner_vote ~ pitch_diff * pr_petitioner_pos + sgpetac + court
 # Saving Table 2 with models 1 through 6.
 stargazer(
   m_prog1, m_prog2, m_prog3, m_prog4, m_prog5, m_prog6,
-  type = "text",
-  out = "HW3 Table2.txt"
+  type = "html",
+  out = "HW3 Table2.html"
 )
 
 # Creating a prediction grid for Figure 4 (pitch x court period interaction).
@@ -576,8 +518,8 @@ model_clean <- lm(
   data = clean_data
 )
 
-# Saving full-vs-clean comparison table (Table 3).
-stargazer(model_full, model_clean, type = "text", out = "HW3 Table3.txt")
+# Saving full-vs-clean comparison table (Table 3) as HTML.
+stargazer(model_full, model_clean, type = "html", out = "HW3 Table3.html")
 
 # Saving a short diagnostics summary so it is easy to cite in the write-up.
 outlier_summary <- c(
@@ -591,7 +533,7 @@ outlier_summary <- c(
   paste("Flagged outliers (any threshold):", sum(outlier_df$is_outlier)),
   paste("Flagged egregious outliers (all thresholds):", sum(outlier_df$is_egregious))
 )
-writeLines(outlier_summary, "HW3_OutlierSummary.txt")
+write_html_pre(outlier_summary, "HW3_OutlierSummary.html", "HW3 Outlier Summary")
 
 # ---------------------------
 # 6) Draft Answers for Q5-Q17
@@ -878,5 +820,5 @@ answers_q5_q17 <- c(
   paste0("Q17: ", q17_text)
 )
 
-# Saving Q5-Q17 draft answers for use in the final PDF write-up.
-writeLines(answers_q5_q17, "HW3_DraftAnswers_Q5_Q17.txt")
+# Saving Q5-Q17 draft answers in HTML for easy Word paste.
+write_html_pre(answers_q5_q17, "HW3_DraftAnswers_Q5_Q17.html", "HW3 Draft Answers Q5-Q17")
